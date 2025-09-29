@@ -19,7 +19,7 @@ app.use(
 app.use(express.json());
 
 // Ollama configuration
-const OLLAMA_BASE_URL = "http://localhost:11434";
+const OLLAMA_BASE_URL = "https://kit-noninitial-unusably.ngrok-free.dev";
 const LLM_MODEL = "llama3.2:1b";
 
 // Initialize embedding store
