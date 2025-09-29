@@ -55,6 +55,7 @@
             color: #d63384;
             display: block;
             line-height: 1.6;
+            white-space: pre-wrap;
         }
         .file-links {
             display: flex;
@@ -113,33 +114,49 @@
             font-size: 14px;
             color: #666;
         }
+        .status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .status.success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            color: #065f46;
+        }
+        .status.error {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #991b1b;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🤖 AgiAI Chatbot Widget</h1>
-        <p class="subtitle">Embed our AI-powered chatbot on any website with just 2 lines of code!</p>
+        <p class="subtitle">Embed our AI-powered chatbot on any website with just 1 line of code!</p>
+        
+        <div id="status" class="status" style="display: none;"></div>
         
         <div class="section">
-            <h2>📦 Installation</h2>
-            <p>Add these lines before the closing <code>&lt;/body&gt;</code> tag of your website:</p>
+            <h2>📦 Installation (Single Line)</h2>
+            <p>Add this before the closing <code>&lt;/body&gt;</code> tag:</p>
             <div class="code-block">
-                <code>&lt;script src="<span id="js-url">LOADING...</span>" data-auto-init&gt;&lt;/script&gt;</code>
-                <code>&lt;link rel="stylesheet" href="<span id="css-url">LOADING...</span>"&gt;</code>
+                <code>&lt;script src="<span id="js-url">Loading...</span>" data-auto-init&gt;&lt;/script&gt;</code>
             </div>
         </div>
 
         <div class="section">
             <h2>⚙️ Custom Configuration</h2>
-            <p>Initialize with custom settings:</p>
+            <p>Initialize with custom API URL:</p>
             <div class="code-block">
-                <code>&lt;script src="<span class="js-url-copy">LOADING...</span>"&gt;&lt;/script&gt;</code>
-                <code>&lt;link rel="stylesheet" href="<span class="css-url-copy">LOADING...</span>"&gt;</code>
-                <code>&lt;script&gt;</code>
-                <code>  window.AgiAIChatbot.init({</code>
-                <code>    apiUrl: 'https://agiai.onrender.com'</code>
-                <code>  });</code>
-                <code>&lt;/script&gt;</code>
+                <code>&lt;script src="<span class="js-url-copy">Loading...</span>"&gt;&lt;/script&gt;
+&lt;script&gt;
+  window.AgiAIChatbot.init({
+    apiUrl: 'https://agiai.onrender.com'
+  });
+&lt;/script&gt;</code>
             </div>
         </div>
 
@@ -163,8 +180,8 @@
                 </div>
                 <div class="feature">
                     <div class="feature-icon">🎨</div>
-                    <div class="feature-title">Customizable</div>
-                    <div class="feature-desc">Configurable theme</div>
+                    <div class="feature-title">Self-Contained</div>
+                    <div class="feature-desc">No CSS needed</div>
                 </div>
             </div>
         </div>
@@ -175,39 +192,60 @@
                 <a href="/agiai-chatbot.iife.js" class="file-link" target="_blank">
                     📜 JavaScript File
                 </a>
-                <a href="/agiai-chatbot.css" class="file-link" target="_blank">
-                    🎨 CSS File
-                </a>
             </div>
         </div>
 
         <div class="demo-notice">
-            <strong>👉 Live Demo:</strong> The chatbot is active on this page! Check the bottom-right corner to see it in action.
+            <strong>👉 Live Demo:</strong> The chatbot should appear in the bottom-right corner. If not, check the status message above.
         </div>
     </div>
 
-    <!-- Load the chatbot on this demo page -->
     <script>
-        // Update URLs dynamically based on current domain
+        // Update URLs dynamically
         const baseUrl = window.location.origin;
         const jsUrl = baseUrl + '/agiai-chatbot.iife.js';
-        const cssUrl = baseUrl + '/agiai-chatbot.css';
         
         document.getElementById('js-url').textContent = jsUrl;
-        document.getElementById('css-url').textContent = cssUrl;
         document.querySelectorAll('.js-url-copy').forEach(el => el.textContent = jsUrl);
-        document.querySelectorAll('.css-url-copy').forEach(el => el.textContent = cssUrl);
         
-        // Load the actual chatbot
+        // Load the chatbot with error handling
         const script = document.createElement('script');
         script.src = jsUrl;
         script.setAttribute('data-auto-init', '');
-        document.body.appendChild(script);
         
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = cssUrl;
-        document.head.appendChild(link);
+        script.onload = function() {
+            console.log('Script loaded successfully');
+            const statusEl = document.getElementById('status');
+            
+            // Check if AgiAIChatbot is available
+            if (typeof window.AgiAIChatbot !== 'undefined') {
+                statusEl.className = 'status success';
+                statusEl.textContent = '✅ Chatbot loaded successfully! Check bottom-right corner.';
+                statusEl.style.display = 'block';
+                
+                // Manually initialize if auto-init didn't work
+                setTimeout(() => {
+                    if (!document.getElementById('agiai-chatbot-root')) {
+                        console.log('Manually initializing chatbot...');
+                        window.AgiAIChatbot.init();
+                    }
+                }, 500);
+            } else {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ Error: AgiAIChatbot object not found. Check console for details.';
+                statusEl.style.display = 'block';
+            }
+        };
+        
+        script.onerror = function() {
+            console.error('Failed to load chatbot script');
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status error';
+            statusEl.textContent = '❌ Failed to load chatbot script. File may not exist at: ' + jsUrl;
+            statusEl.style.display = 'block';
+        };
+        
+        document.body.appendChild(script);
     </script>
 </body>
 </html>

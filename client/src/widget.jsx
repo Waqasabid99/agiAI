@@ -1,11 +1,11 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import Chatbot from './App';
+import { createRoot } from 'react-dom/client';
+import Chatbot from './App'; // or './Chatbot' depending on your file structure
 
-// Widget initialization function
-window.AgiAIChatbot = {
-  init: function(config = {}) {
-    // Prevent multiple initializations
+// Initialize function
+const init = (config = {}) => {
+  try {
+    // Check if already initialized
     if (document.getElementById('agiai-chatbot-root')) {
       console.warn('AgiAI Chatbot already initialized');
       return;
@@ -16,19 +16,29 @@ window.AgiAIChatbot = {
     container.id = 'agiai-chatbot-root';
     document.body.appendChild(container);
 
-    // Create root and render
-    const root = ReactDOM.createRoot(container);
-    root.render(
-      <React.StrictMode>
-        <Chatbot config={config} />
-      </React.StrictMode>
-    );
+    // Create and render
+    const root = createRoot(container);
+    root.render(<Chatbot config={config} />);
+    
+    console.log('AgiAI Chatbot initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize AgiAI Chatbot:', error);
   }
 };
 
-// Auto-initialize if data attribute is present
-if (document.currentScript && document.currentScript.hasAttribute('data-auto-init')) {
-  window.addEventListener('DOMContentLoaded', () => {
-    window.AgiAIChatbot.init();
-  });
+// Expose globally
+if (typeof window !== 'undefined') {
+  window.AgiAIChatbot = { init };
+  
+  // Auto-init check
+  const script = document.currentScript;
+  if (script && script.hasAttribute('data-auto-init')) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => init());
+    } else {
+      setTimeout(() => init(), 0);
+    }
+  }
 }
+
+export default { init };
