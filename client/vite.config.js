@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/Widget.jsx'),
+      entry: resolve(__dirname, 'src/widget.jsx'),
       name: 'AgiAIChatbot',
       fileName: 'agiai-chatbot',
       formats: ['iife'] // Immediately Invoked Function Expression
