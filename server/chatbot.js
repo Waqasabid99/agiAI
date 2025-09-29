@@ -1,25 +1,29 @@
 // chatbot.js
-const express = require('express');
-const axios = require('axios');
-const cors = require('cors');
-const { EmbeddingStore } = require('./embedStore');
-const { scrapeWebsite } = require('./scraper');
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
+const { EmbeddingStore } = require("./embedStore");
+const { scrapeWebsite } = require("./scraper");
 
 // Create Express app
 const app = express();
 
 // Middleware
-app.use(cors({
-    origin: ['http://localhost:5173', 'https://agi-ai-three.vercel.app']
-}))
+app.use(
+  cors({
+    origin: "*", // Or specify allowed domains
+    methods: ["POST", "GET"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Ollama configuration
-const OLLAMA_BASE_URL = 'http://localhost:11434';
-const LLM_MODEL = 'llama3.2:1b';
+const OLLAMA_BASE_URL = "http://localhost:11434";
+const LLM_MODEL = "llama3.2:1b";
 
 // Initialize embedding store
-const embedStore = new EmbeddingStore('./vector_db');
+const embedStore = new EmbeddingStore("./vector_db");
 
 // Track initialization
 let isInitialized = false;
@@ -31,9 +35,9 @@ async function initializeChatbot() {
   try {
     await embedStore.initialize();
     isInitialized = true;
-    console.log('Chatbot initialized successfully');
+    console.log("Chatbot initialized successfully");
   } catch (error) {
-    console.error('Failed to initialize chatbot:', error.message);
+    console.error("Failed to initialize chatbot:", error.message);
     throw error;
   }
 }
@@ -60,14 +64,14 @@ ${context}`;
       {
         model: LLM_MODEL,
         prompt: `${systemPrompt}\n\nUser Question: ${prompt}\n\nAnswer:`,
-        stream: false
+        stream: false,
       },
       { timeout: 60000 }
     );
 
     return response.data.response;
   } catch (error) {
-    console.error('Error generating LLM response:', error.message);
+    console.error("Error generating LLM response:", error.message);
     throw error;
   }
 }
@@ -82,15 +86,16 @@ async function processQuery(userQuery) {
 
     if (relevantChunks.length === 0) {
       return {
-        answer: "I could not find that information on the website. The knowledge base might be empty or your question might not be covered.",
-        sources: []
+        answer:
+          "I could not find that information on the website. The knowledge base might be empty or your question might not be covered.",
+        sources: [],
       };
     }
 
     // Step 2: Prepare context from retrieved chunks
     const context = relevantChunks
       .map((chunk, idx) => `[Source ${idx + 1}]: ${chunk.text}`)
-      .join('\n\n');
+      .join("\n\n");
 
     console.log(`Retrieved ${relevantChunks.length} relevant chunks`);
 
@@ -100,18 +105,18 @@ async function processQuery(userQuery) {
     // Step 4: Prepare sources
     const sources = relevantChunks.map((chunk, idx) => ({
       index: idx + 1,
-      text: chunk.text.substring(0, 200) + '...',
+      text: chunk.text.substring(0, 200) + "...",
       url: chunk.url,
       title: chunk.title,
-      relevanceScore: chunk.score
+      relevanceScore: chunk.score,
     }));
 
     return {
       answer,
-      sources
+      sources,
     };
   } catch (error) {
-    console.error('Error processing query:', error.message);
+    console.error("Error processing query:", error.message);
     throw error;
   }
 }
@@ -119,19 +124,19 @@ async function processQuery(userQuery) {
 /**
  * POST /getMsg - Main chatbot endpoint
  */
-app.post('/getMsg', async (req, res) => {
+app.post("/getMsg", async (req, res) => {
   try {
     if (!isInitialized) {
       return res.status(503).json({
-        error: 'Chatbot is not initialized yet. Please wait.'
+        error: "Chatbot is not initialized yet. Please wait.",
       });
     }
 
     const { content, role } = req.body;
 
-    if (!content || role !== 'user') {
+    if (!content || role !== "user") {
       return res.status(400).json({
-        error: 'Invalid request. Expected { content: string, role: "user" }'
+        error: 'Invalid request. Expected { content: string, role: "user" }',
       });
     }
 
@@ -141,16 +146,16 @@ app.post('/getMsg', async (req, res) => {
     const result = await processQuery(content);
 
     res.json({
-      role: 'assistant',
+      role: "assistant",
       content: result.answer,
       sources: result.sources,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error in /getMsg:', error.message);
+    console.error("Error in /getMsg:", error.message);
     res.status(500).json({
-      error: 'An error occurred while processing your request',
-      details: error.message
+      error: "An error occurred while processing your request",
+      details: error.message,
     });
   }
 });
@@ -158,14 +163,14 @@ app.post('/getMsg', async (req, res) => {
 /**
  * POST /scrape - Scrape and index a website
  */
-app.post('/scrape', async (req, res) => {
+app.post("/scrape", async (req, res) => {
   try {
-    const url = 'https://agiteks.com';
+    const url = "https://agiteks.com";
     const { isDynamic = false } = req.body;
 
     if (!url) {
       return res.status(400).json({
-        error: 'URL is required'
+        error: "URL is required",
       });
     }
 
@@ -177,21 +182,21 @@ app.post('/scrape', async (req, res) => {
     // Store chunks in vector database
     const count = await embedStore.storeChunks(scrapedData.chunks, {
       url: scrapedData.url,
-      title: scrapedData.title
+      title: scrapedData.title,
     });
 
     res.json({
-      message: 'Website scraped and indexed successfully',
+      message: "Website scraped and indexed successfully",
       url: scrapedData.url,
       title: scrapedData.title,
       chunksStored: count,
-      timestamp: scrapedData.scrapedAt
+      timestamp: scrapedData.scrapedAt,
     });
   } catch (error) {
-    console.error('Error in /scrape:', error.message);
+    console.error("Error in /scrape:", error.message);
     res.status(500).json({
-      error: 'Failed to scrape website',
-      details: error.message
+      error: "Failed to scrape website",
+      details: error.message,
     });
   }
 });
@@ -199,22 +204,22 @@ app.post('/scrape', async (req, res) => {
 /**
  * GET /status - Check chatbot status
  */
-app.get('/status', async (req, res) => {
+app.get("/status", async (req, res) => {
   try {
     const count = await embedStore.getCount();
-    
+
     res.json({
-      status: 'running',
+      status: "running",
       initialized: isInitialized,
       chunksInDatabase: count,
       ollamaUrl: OLLAMA_BASE_URL,
-      embeddingModel: 'mxbai-embed-large',
-      llmModel: LLM_MODEL
+      embeddingModel: "mxbai-embed-large",
+      llmModel: LLM_MODEL,
     });
   } catch (error) {
     res.status(500).json({
-      error: 'Error getting status',
-      details: error.message
+      error: "Error getting status",
+      details: error.message,
     });
   }
 });
@@ -222,18 +227,18 @@ app.get('/status', async (req, res) => {
 /**
  * DELETE /clear - Clear all data from database
  */
-app.delete('/clear', async (req, res) => {
+app.delete("/clear", async (req, res) => {
   try {
     await embedStore.clearAll();
     await embedStore.initialize();
-    
+
     res.json({
-      message: 'Database cleared successfully'
+      message: "Database cleared successfully",
     });
   } catch (error) {
     res.status(500).json({
-      error: 'Error clearing database',
-      details: error.message
+      error: "Error clearing database",
+      details: error.message,
     });
   }
 });
@@ -250,7 +255,9 @@ async function startServer() {
 
     // Start Express server
     app.listen(PORT, () => {
-      console.log(`\n🤖 RAG Chatbot Server running on port http://localhost:${PORT}`);
+      console.log(
+        `\n🤖 RAG Chatbot Server running on port http://localhost:${PORT}`
+      );
       console.log(`\nAvailable endpoints:`);
       console.log(`  POST /getMsg    - Send a message to the chatbot`);
       console.log(`  POST /scrape    - Scrape and index a website`);
@@ -258,7 +265,7 @@ async function startServer() {
       console.log(`  DELETE /clear   - Clear all data\n`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error.message);
+    console.error("Failed to start server:", error.message);
     process.exit(1);
   }
 }
