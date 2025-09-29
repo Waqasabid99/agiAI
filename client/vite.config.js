@@ -4,23 +4,22 @@ import { resolve } from 'path';
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   build: {
+    outDir: 'dist',  // Standard output directory
     lib: {
       entry: resolve(__dirname, 'src/widget.jsx'),
       name: 'AgiAIChatbot',
       fileName: 'agiai-chatbot',
-      formats: ['iife'] // Immediately Invoked Function Expression
+      formats: ['iife']
     },
     rollupOptions: {
       external: [],
       output: {
         globals: {},
-        assetFileNames: 'agiai-chatbot.[ext]'
+        assetFileNames: 'agiai-chatbot.[ext]',
+        entryFileNames: 'agiai-chatbot.iife.js'
       }
     }
-  },
-  define: {
-    'process.env.NODE_ENV': JSON.stringify('production')
   }
 });

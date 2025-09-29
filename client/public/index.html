@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgiAI Chatbot Widget</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            max-width: 700px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .code-block {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        code {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            color: #d63384;
+            display: block;
+            line-height: 1.6;
+        }
+        .file-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .file-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .file-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .demo-notice {
+            background: #e8f4f8;
+            border-left: 4px solid #0891b2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .demo-notice strong {
+            color: #0891b2;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .feature {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .feature-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .feature-desc {
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AgiAI Chatbot Widget</h1>
+        <p class="subtitle">Embed our AI-powered chatbot on any website with just 2 lines of code!</p>
+        
+        <div class="section">
+            <h2>📦 Installation</h2>
+            <p>Add these lines before the closing <code>&lt;/body&gt;</code> tag of your website:</p>
+            <div class="code-block">
+                <code>&lt;script src="<span id="js-url">LOADING...</span>" data-auto-init&gt;&lt;/script&gt;</code>
+                <code>&lt;link rel="stylesheet" href="<span id="css-url">LOADING...</span>"&gt;</code>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Custom Configuration</h2>
+            <p>Initialize with custom settings:</p>
+            <div class="code-block">
+                <code>&lt;script src="<span class="js-url-copy">LOADING...</span>"&gt;&lt;/script&gt;</code>
+                <code>&lt;link rel="stylesheet" href="<span class="css-url-copy">LOADING...</span>"&gt;</code>
+                <code>&lt;script&gt;</code>
+                <code>  window.AgiAIChatbot.init({</code>
+                <code>    apiUrl: 'https://your-api.com'</code>
+                <code>  });</code>
+                <code>&lt;/script&gt;</code>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>✨ Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-title">Universal</div>
+                    <div class="feature-desc">Works on any website</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">Fast</div>
+                    <div class="feature-desc">Lightweight bundle</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-title">Responsive</div>
+                    <div class="feature-desc">Mobile-friendly</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <div class="feature-title">Customizable</div>
+                    <div class="feature-desc">Configurable theme</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📄 Direct File Access</h2>
+            <div class="file-links">
+                <a href="/agiai-chatbot.iife.js" class="file-link" target="_blank">
+                    📜 JavaScript File
+                </a>
+                <a href="/agiai-chatbot.css" class="file-link" target="_blank">
+                    🎨 CSS File
+                </a>
+            </div>
+        </div>
+
+        <div class="demo-notice">
+            <strong>👉 Live Demo:</strong> The chatbot is active on this page! Check the bottom-right corner to see it in action.
+        </div>
+    </div>
+
+    <!-- Load the chatbot on this demo page -->
+    <script>
+        // Update URLs dynamically based on current domain
+        const baseUrl = window.location.origin;
+        const jsUrl = baseUrl + '/agiai-chatbot.iife.js';
+        const cssUrl = baseUrl + '/agiai-chatbot.css';
+        
+        document.getElementById('js-url').textContent = jsUrl;
+        document.getElementById('css-url').textContent = cssUrl;
+        document.querySelectorAll('.js-url-copy').forEach(el => el.textContent = jsUrl);
+        document.querySelectorAll('.css-url-copy').forEach(el => el.textContent = cssUrl);
+        
+        // Load the actual chatbot
+        const script = document.createElement('script');
+        script.src = jsUrl;
+        script.setAttribute('data-auto-init', '');
+        document.body.appendChild(script);
+        
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = cssUrl;
+        document.head.appendChild(link);
+    </script>
+</body>
+</html>
