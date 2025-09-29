@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, X } from 'lucide-react';
 
-const EmbeddableChatbot = () => {
+const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { id: 1, text: "Hi there! 👋 I'm AgiAI, your technical assistant. How can I help you today?", sender: 'bot' }
@@ -197,4 +197,4 @@ const EmbeddableChatbot = () => {
   );
 };
 
-export default EmbeddableChatbot;
+export default Chatbot;

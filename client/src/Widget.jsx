@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import EmbeddableChatbot from './App';
+import Chatbot from './App';
 
 // Widget initialization function
 window.AgiAIChatbot = {
@@ -20,7 +20,7 @@ window.AgiAIChatbot = {
     const root = ReactDOM.createRoot(container);
     root.render(
       <React.StrictMode>
-        <EmbeddableChatbot config={config} />
+        <Chatbot config={config} />
       </React.StrictMode>
     );
   }
