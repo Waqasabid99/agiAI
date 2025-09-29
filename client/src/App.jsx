@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, X } from 'lucide-react';
 
-const Chatbot = () => {
+const Chatbot = ({ config = {} }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { id: 1, text: "Hi there! 👋 I'm AgiAI, your technical assistant. How can I help you today?", sender: 'bot' }
@@ -12,7 +11,7 @@ const Chatbot = () => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const API_BASE_URL = 'http://localhost:3000';
+  const API_BASE_URL = config.apiUrl || 'http://localhost:3000';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -58,7 +57,6 @@ const Chatbot = () => {
     if (!message) return;
 
     setError(null);
-
     const newMessage = {
       id: Date.now(),
       text: message,
@@ -71,24 +69,21 @@ const Chatbot = () => {
 
     try {
       const botResponse = await callAPI(message);
-      
       const botMessage = {
         id: Date.now() + 1,
         text: botResponse,
         sender: 'bot'
       };
-      
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       const errorMessage = {
         id: Date.now() + 1,
-        text: "Sorry, I'm having trouble connecting to my brain right now 🤖. Please try again in a moment!",
+        text: "Sorry, I'm having trouble connecting right now 🤖. Please try again!",
         sender: 'bot',
         isError: true
       };
-      
       setMessages(prev => [...prev, errorMessage]);
-      setError('Failed to get response from AI assistant');
+      setError('Failed to get response');
     } finally {
       setIsTyping(false);
     }
@@ -100,99 +95,279 @@ const Chatbot = () => {
     }
   };
 
-  const toggleChat = () => {
-    setIsOpen(!isOpen);
-    if (error) setError(null);
+  // Inline styles
+  const styles = {
+    container: {
+      position: 'fixed',
+      bottom: '20px',
+      right: '20px',
+      zIndex: 9999,
+      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    },
+    toggleButton: {
+      width: '56px',
+      height: '56px',
+      borderRadius: '50%',
+      border: 'none',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      cursor: 'pointer',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '24px',
+      transition: 'all 0.3s ease',
+      transform: isOpen ? 'rotate(180deg) scale(1.1)' : 'scale(1)'
+    },
+    chatbox: {
+      position: 'absolute',
+      bottom: '70px',
+      right: '0',
+      width: '350px',
+      maxWidth: 'calc(100vw - 40px)',
+      height: '500px',
+      maxHeight: 'calc(100vh - 100px)',
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+      display: isOpen ? 'flex' : 'none',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      animation: isOpen ? 'slideUp 0.3s ease' : 'none'
+    },
+    header: {
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      padding: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px'
+    },
+    avatar: {
+      width: '40px',
+      height: '40px',
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: '600',
+      fontSize: '16px'
+    },
+    headerText: {
+      flex: 1
+    },
+    headerTitle: {
+      fontWeight: '600',
+      fontSize: '16px',
+      marginBottom: '2px'
+    },
+    headerSubtitle: {
+      fontSize: '12px',
+      opacity: 0.9
+    },
+    errorBanner: {
+      padding: '8px 16px',
+      backgroundColor: '#fee2e2',
+      borderLeft: '4px solid #ef4444',
+      color: '#991b1b',
+      fontSize: '12px'
+    },
+    messagesContainer: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: '20px',
+      backgroundColor: '#f9fafb',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    },
+    message: {
+      maxWidth: '85%',
+      padding: '12px',
+      borderRadius: '16px',
+      fontSize: '14px',
+      lineHeight: '1.5',
+      wordWrap: 'break-word'
+    },
+    botMessage: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#eff6ff',
+      color: '#1e40af',
+      borderBottomLeftRadius: '4px'
+    },
+    userMessage: {
+      alignSelf: 'flex-end',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      borderBottomRightRadius: '4px'
+    },
+    errorMessage: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#fee2e2',
+      color: '#991b1b',
+      border: '1px solid #fecaca',
+      borderBottomLeftRadius: '4px'
+    },
+    typingIndicator: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#eff6ff',
+      color: '#1e40af',
+      borderRadius: '16px',
+      borderBottomLeftRadius: '4px',
+      padding: '12px',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
+    },
+    inputContainer: {
+      padding: '16px',
+      backgroundColor: 'white',
+      borderTop: '1px solid #e5e7eb',
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'center'
+    },
+    input: {
+      flex: 1,
+      border: '1px solid #e5e7eb',
+      borderRadius: '24px',
+      padding: '10px 16px',
+      fontSize: '14px',
+      outline: 'none',
+      transition: 'border-color 0.2s'
+    },
+    sendButton: {
+      width: '40px',
+      height: '40px',
+      borderRadius: '50%',
+      border: 'none',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '18px',
+      transition: 'transform 0.2s',
+      opacity: inputValue.trim() && !isTyping ? 1 : 0.5
+    },
+    dot: {
+      width: '6px',
+      height: '6px',
+      backgroundColor: '#1e40af',
+      borderRadius: '50%',
+      animation: 'bounce 1.4s infinite ease-in-out'
+    }
   };
 
-  const TypingIndicator = () => (
-    <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-2xl rounded-bl-md max-w-[85%]">
-      <span className="text-sm">AgiAI is thinking</span>
-      <div className="flex gap-1">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="w-1.5 h-1.5 bg-blue-700 rounded-full animate-bounce"
-            style={{ animationDelay: `${i * 0.16}s` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
+  // Add animation keyframes
+  useEffect(() => {
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+      @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(styleSheet);
+    return () => document.head.removeChild(styleSheet);
+  }, []);
 
   return (
-    <div className="fixed bottom-5 right-5 z-[9999] font-sans">
+    <div style={styles.container}>
       {/* Toggle Button */}
-      <button
-        onClick={toggleChat}
-        className="w-14 h-14 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-white"
-        style={{ transform: isOpen ? 'rotate(180deg) scale(1.1)' : 'scale(1)' }}
-      >
-        {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
+      <button onClick={() => setIsOpen(!isOpen)} style={styles.toggleButton}>
+        {isOpen ? '×' : '💬'}
       </button>
 
       {/* Chatbox */}
-      {isOpen && (
-        <div className="absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 animate-fadeIn">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-500 to-blue-500 text-white p-5 flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-semibold">
-              AI
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg">AgiAI Assistant</h3>
-              <p className="text-sm opacity-90">Online • Technical Support</p>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="px-4 py-2 bg-red-50 border-l-4 border-red-400 text-red-700 text-xs">
-              {error}
-            </div>
-          )}
-
-          {/* Messages */}
-          <div className="h-96 overflow-y-auto p-5 bg-gray-50 flex flex-col gap-3">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
-                  message.sender === 'bot'
-                    ? `${message.isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700'} self-start rounded-bl-md`
-                    : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white self-end rounded-br-md'
-                }`}
-              >
-                {message.text}
-              </div>
-            ))}
-            
-            {isTyping && <TypingIndicator />}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className="p-4 bg-white border-t border-gray-100 flex items-center gap-3">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask me anything technical..."
-              className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-purple-500 transition-colors"
-              disabled={isTyping}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!inputValue.trim() || isTyping}
-              className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send size={16} />
-            </button>
+      <div style={styles.chatbox}>
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.avatar}>AI</div>
+          <div style={styles.headerText}>
+            <div style={styles.headerTitle}>AgiAI Assistant</div>
+            <div style={styles.headerSubtitle}>Online • Technical Support</div>
           </div>
         </div>
-      )}
+
+        {/* Error Banner */}
+        {error && <div style={styles.errorBanner}>{error}</div>}
+
+        {/* Messages */}
+        <div style={styles.messagesContainer}>
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              style={{
+                ...styles.message,
+                ...(msg.sender === 'bot' 
+                  ? (msg.isError ? styles.errorMessage : styles.botMessage)
+                  : styles.userMessage
+                )
+              }}
+            >
+              {msg.text}
+            </div>
+          ))}
+          
+          {isTyping && (
+            <div style={styles.typingIndicator}>
+              <span>AgiAI is thinking</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      ...styles.dot,
+                      animationDelay: `${i * 0.16}s`
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div style={styles.inputContainer}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={handleKeyPress}
+            onFocus={(e) => e.target.style.borderColor = '#667eea'}
+            onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+            placeholder="Ask me anything..."
+            disabled={isTyping}
+            style={styles.input}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!inputValue.trim() || isTyping}
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.transform = 'scale(1.05)')}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            style={styles.sendButton}
+          >
+            ➤
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
