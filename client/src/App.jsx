@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-const Chatbot = ({ config = {} }) => {
+const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { id: 1, text: "Hi there! 👋 I'm AgiAI, your technical assistant. How can I help you today?", sender: 'bot' }
@@ -11,7 +11,7 @@ const Chatbot = ({ config = {} }) => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const API_BASE_URL = config.apiUrl || 'http://localhost:3000';
+  const API_BASE_URL = 'https://agiai.onrender.com';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
