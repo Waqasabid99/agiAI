@@ -1,6 +1,6 @@
 // chatbot.js
 const express = require("express");
-const axios = require("axios");
+const Groq = require("groq-sdk");
 const cors = require("cors");
 const { EmbeddingStore } = require("./embedStore");
 const { scrapeWebsite } = require("./scraper");
@@ -18,9 +18,20 @@ app.use(
 );
 app.use(express.json());
 
-// Ollama configuration
-const OLLAMA_BASE_URL = "http://localhost:11434";
-const LLM_MODEL = "llama3.2:1b";
+// Groq configuration
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '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';
+const LLM_MODEL = "llama-3.1-8b-instant"; // You can also use: "mixtral-8x7b-32768", "llama-3.1-70b-versatile"
+
+if (!GROQ_API_KEY) {
+  console.error("ERROR: GROQ_API_KEY environment variable is not set!");
+  console.error("Please set it using: export GROQ_API_KEY='your-api-key-here'");
+  process.exit(1);
+}
+
+// Initialize Groq client
+const groq = new Groq({
+  apiKey: GROQ_API_KEY,
+});
 
 // Initialize embedding store
 const embedStore = new EmbeddingStore("./vector_db");
@@ -43,7 +54,7 @@ async function initializeChatbot() {
 }
 
 /**
- * Generate response using Ollama LLM
+ * Generate response using Groq LLM
  */
 async function generateLLMResponse(prompt, context) {
   try {
@@ -59,19 +70,32 @@ IMPORTANT RULES:
 Context:
 ${context}`;
 
-    const response = await axios.post(
-      `${OLLAMA_BASE_URL}/api/generate`,
-      {
-        model: LLM_MODEL,
-        prompt: `${systemPrompt}\n\nUser Question: ${prompt}\n\nAnswer:`,
-        stream: false,
-      },
-      { timeout: 60000 }
-    );
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: LLM_MODEL,
+      temperature: 0.3, // Lower temperature for more focused responses
+      max_tokens: 1024,
+      top_p: 0.9,
+    });
 
-    return response.data.response;
+    return completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
   } catch (error) {
     console.error("Error generating LLM response:", error.message);
+    if (error.status === 401) {
+      throw new Error("Invalid Groq API key. Please check your GROQ_API_KEY environment variable.");
+    }
+    if (error.status === 429) {
+      throw new Error("Rate limit exceeded. Please try again later.");
+    }
     throw error;
   }
 }
@@ -212,9 +236,10 @@ app.get("/status", async (req, res) => {
       status: "running",
       initialized: isInitialized,
       chunksInDatabase: count,
-      ollamaUrl: OLLAMA_BASE_URL,
+      provider: "Groq",
       embeddingModel: "mxbai-embed-large",
       llmModel: LLM_MODEL,
+      apiKeyConfigured: !!GROQ_API_KEY,
     });
   } catch (error) {
     res.status(500).json({
@@ -256,13 +281,14 @@ async function startServer() {
     // Start Express server
     app.listen(PORT, () => {
       console.log(
-        `\n🤖 RAG Chatbot Server running on port http://localhost:${PORT}`
+        `\n🤖 RAG Chatbot Server (Groq-powered) running on http://localhost:${PORT}`
       );
       console.log(`\nAvailable endpoints:`);
       console.log(`  POST /getMsg    - Send a message to the chatbot`);
       console.log(`  POST /scrape    - Scrape and index a website`);
       console.log(`  GET  /status    - Check system status`);
-      console.log(`  DELETE /clear   - Clear all data\n`);
+      console.log(`  DELETE /clear   - Clear all data`);
+      console.log(`\nUsing Groq model: ${LLM_MODEL}\n`);
     });
   } catch (error) {
     console.error("Failed to start server:", error.message);
