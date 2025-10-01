@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const Groq = require("groq-sdk");
 const cors = require("cors");
-const { EmbeddingStore } = require("./embedStore");
+const { Pinecone } = require("@pinecone-database/pinecone");
 const { scrapeWebsite } = require("./scraper");
 
 // Create Express app
@@ -20,12 +20,20 @@ app.use(
 app.use(express.json());
 
 // Groq configuration
-const GROQ_API_KEY = process.env.GROQ_API_KEY || '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';
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
 const LLM_MODEL = "openai/gpt-oss-20b";
+const PINECONE_INDEX_NAME = "chatbot";
 
 if (!GROQ_API_KEY) {
   console.error("ERROR: GROQ_API_KEY environment variable is not set!");
   console.error("Please set it using: export GROQ_API_KEY='your-api-key-here'");
+  process.exit(1);
+}
+
+if (!PINECONE_API_KEY) {
+  console.error("ERROR: PINECONE_API_KEY environment variable is not set!");
+  console.error("Please set it using: export PINECONE_API_KEY='your-api-key-here'");
   process.exit(1);
 }
 
@@ -34,22 +42,143 @@ const groq = new Groq({
   apiKey: GROQ_API_KEY,
 });
 
-// Initialize embedding store
-const embedStore = new EmbeddingStore("./vector_db");
+// Initialize Pinecone client
+const pinecone = new Pinecone({
+  apiKey: PINECONE_API_KEY,
+});
 
 // Track initialization
 let isInitialized = false;
+let pineconeIndex = null;
+
+/**
+ * Generate embeddings using Pinecone's inference API
+ */
+async function generateEmbedding(text) {
+  try {
+    const embeddings = await pinecone.inference.embed(
+      "llama-text-embed-v2",
+      [text],
+      { inputType: "passage" }
+    );
+    
+    return embeddings[0].values;
+  } catch (error) {
+    console.error("Error generating embedding:", error.message);
+    throw error;
+  }
+}
 
 /**
  * Initialize the chatbot system
  */
 async function initializeChatbot() {
   try {
-    await embedStore.initialize();
+    // Get the Pinecone index
+    pineconeIndex = pinecone.index(PINECONE_INDEX_NAME);
+    
     isInitialized = true;
     console.log("Chatbot initialized successfully");
+    console.log(`Connected to Pinecone index: ${PINECONE_INDEX_NAME}`);
   } catch (error) {
     console.error("Failed to initialize chatbot:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Store chunks in Pinecone
+ */
+async function storeChunks(chunks, metadata) {
+  try {
+    const vectors = [];
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const embedding = await generateEmbedding(chunk);
+      
+      vectors.push({
+        id: `chunk_${Date.now()}_${i}`,
+        values: embedding,
+        metadata: {
+          text: chunk,
+          url: metadata.url,
+          title: metadata.title,
+          timestamp: new Date().toISOString(),
+        },
+      });
+      
+      // Log progress
+      if ((i + 1) % 10 === 0) {
+        console.log(`Generated embeddings for ${i + 1}/${chunks.length} chunks`);
+      }
+    }
+    
+    // Upsert vectors to Pinecone in batches
+    const batchSize = 100;
+    for (let i = 0; i < vectors.length; i += batchSize) {
+      const batch = vectors.slice(i, i + batchSize);
+      await pineconeIndex.upsert(batch);
+      console.log(`Upserted batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(vectors.length / batchSize)}`);
+    }
+    
+    return vectors.length;
+  } catch (error) {
+    console.error("Error storing chunks:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Search for similar chunks in Pinecone
+ */
+async function searchSimilar(query, topK = 5) {
+  try {
+    // Generate embedding for the query
+    const queryEmbedding = await generateEmbedding(query);
+    
+    // Search in Pinecone
+    const results = await pineconeIndex.query({
+      vector: queryEmbedding,
+      topK: topK,
+      includeMetadata: true,
+    });
+    
+    // Format results
+    return results.matches.map(match => ({
+      text: match.metadata.text,
+      url: match.metadata.url,
+      title: match.metadata.title,
+      score: match.score,
+    }));
+  } catch (error) {
+    console.error("Error searching similar chunks:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get count of vectors in Pinecone
+ */
+async function getCount() {
+  try {
+    const stats = await pineconeIndex.describeIndexStats();
+    return stats.totalRecordCount || 0;
+  } catch (error) {
+    console.error("Error getting count:", error.message);
+    return 0;
+  }
+}
+
+/**
+ * Clear all vectors from Pinecone
+ */
+async function clearAll() {
+  try {
+    await pineconeIndex.deleteAll();
+    console.log("All vectors cleared from Pinecone");
+  } catch (error) {
+    console.error("Error clearing vectors:", error.message);
     throw error;
   }
 }
@@ -83,7 +212,7 @@ ${context}`;
         },
       ],
       model: LLM_MODEL,
-      temperature: 0.3, // Lower temperature for more focused responses
+      temperature: 0.3,
       max_tokens: 1024,
       top_p: 0.9,
     });
@@ -107,7 +236,7 @@ ${context}`;
 async function processQuery(userQuery) {
   try {
     // Step 1: Retrieve relevant chunks
-    const relevantChunks = await embedStore.searchSimilar(userQuery, 5);
+    const relevantChunks = await searchSimilar(userQuery, 5);
 
     if (relevantChunks.length === 0) {
       return {
@@ -198,8 +327,8 @@ app.post("/scrape", async (req, res) => {
     // Scrape the website
     const scrapedData = await scrapeWebsite(url, isDynamic);
 
-    // Store chunks in vector database
-    const count = await embedStore.storeChunks(scrapedData.chunks, {
+    // Store chunks in Pinecone
+    const count = await storeChunks(scrapedData.chunks, {
       url: scrapedData.url,
       title: scrapedData.title,
     });
@@ -225,16 +354,20 @@ app.post("/scrape", async (req, res) => {
  */
 app.get("/status", async (req, res) => {
   try {
-    const count = await embedStore.getCount();
+    const count = await getCount();
 
     res.json({
       status: "running",
       initialized: isInitialized,
       chunksInDatabase: count,
-      provider: "Groq",
-      embeddingModel: "mxbai-embed-large",
+      vectorDB: "Pinecone",
+      indexName: PINECONE_INDEX_NAME,
+      embeddingModel: "llama-text-embed-v2",
       llmModel: LLM_MODEL,
-      apiKeyConfigured: !!GROQ_API_KEY,
+      apiKeysConfigured: {
+        groq: !!GROQ_API_KEY,
+        pinecone: !!PINECONE_API_KEY,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -249,11 +382,10 @@ app.get("/status", async (req, res) => {
  */
 app.delete("/clear", async (req, res) => {
   try {
-    await embedStore.clearAll();
-    await embedStore.initialize();
+    await clearAll();
 
     res.json({
-      message: "Database cleared successfully",
+      message: "Pinecone index cleared successfully",
     });
   } catch (error) {
     res.status(500).json({
@@ -276,14 +408,17 @@ async function startServer() {
     // Start Express server
     app.listen(PORT, () => {
       console.log(
-        `\n🤖 RAG Chatbot Server (Groq-powered) running on http://localhost:${PORT}`
+        `\n🤖 RAG Chatbot Server (Groq + Pinecone) running on http://localhost:${PORT}`
       );
       console.log(`\nAvailable endpoints:`);
       console.log(`  POST /getMsg    - Send a message to the chatbot`);
       console.log(`  POST /scrape    - Scrape and index a website`);
       console.log(`  GET  /status    - Check system status`);
       console.log(`  DELETE /clear   - Clear all data`);
-      console.log(`\nUsing Groq model: ${LLM_MODEL}\n`);
+      console.log(`\nUsing:`);
+      console.log(`  LLM: ${LLM_MODEL} (Groq)`);
+      console.log(`  Vector DB: Pinecone (${PINECONE_INDEX_NAME})`);
+      console.log(`  Embeddings: llama-text-embed-v2 (Pinecone)\n`);
     });
   } catch (error) {
     console.error("Failed to start server:", error.message);
