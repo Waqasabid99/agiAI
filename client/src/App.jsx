@@ -11,7 +11,7 @@ const Chatbot = () => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const API_BASE_URL = 'http://0.0.0.0:8000';
+  const API_BASE_URL = 'https://kit-noninitial-unusably.ngrok-free.dev';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
