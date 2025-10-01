@@ -151,12 +151,6 @@ async function processQuery(userQuery) {
  */
 app.post("/getMsg", async (req, res) => {
   try {
-    if (!isInitialized) {
-      return res.status(503).json({
-        error: "Chatbot is not initialized yet. Please wait.",
-      });
-    }
-
     const { content, role } = req.body;
 
     if (!content || role !== "user") {
