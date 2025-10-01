@@ -20,7 +20,7 @@ app.use(
 app.use(express.json());
 
 // Groq configuration
-const GROQ_API_KEY = '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';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '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';
 const LLM_MODEL = "openai/gpt-oss-20b";
 
 if (!GROQ_API_KEY) {
