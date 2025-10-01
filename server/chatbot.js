@@ -1,4 +1,5 @@
 // chatbot.js
+require("dotenv").config();
 const express = require("express");
 const Groq = require("groq-sdk");
 const cors = require("cors");
