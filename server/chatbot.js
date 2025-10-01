@@ -20,8 +20,8 @@ app.use(
 app.use(express.json());
 
 // Groq configuration
-const GROQ_API_KEY = process.env.GROQ_API_KEY || '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';
-const LLM_MODEL = "llama-3.1-8b-instant"; // You can also use: "mixtral-8x7b-32768", "llama-3.1-70b-versatile"
+const GROQ_API_KEY = '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';
+const LLM_MODEL = "openai/gpt-oss-20b";
 
 if (!GROQ_API_KEY) {
   console.error("ERROR: GROQ_API_KEY environment variable is not set!");
