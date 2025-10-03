@@ -237,7 +237,8 @@ const Chatbot = () => {
       padding: '10px 16px',
       fontSize: '14px',
       outline: 'none',
-      transition: 'border-color 0.2s'
+      transition: 'border-color 0.2s',
+      color: 'black'
     },
     sendButton: {
       width: '40px',
